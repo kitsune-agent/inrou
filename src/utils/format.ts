@@ -145,6 +145,10 @@ export function formatProfile(features: Record<string, number>, repoPath: string
 
 function renderBar(value: number, key: string): string {
   const maxWidth = 20;
+  // Guard against NaN, Infinity, or negative values
+  if (!Number.isFinite(value) || value < 0) {
+    return chalk.dim('░'.repeat(maxWidth));
+  }
   // Normalize based on key type
   let normalized: number;
   if (key.includes('Ratio') || key.includes('ratio')) {
@@ -163,13 +167,16 @@ function renderBar(value: number, key: string): string {
     normalized = Math.min(value, 1);
   }
 
+  // Clamp to valid range
+  normalized = Math.max(0, Math.min(1, normalized));
   const filled = Math.round(normalized * maxWidth);
   const empty = maxWidth - filled;
   return chalk.green('█'.repeat(filled)) + chalk.dim('░'.repeat(empty));
 }
 
 function formatValue(value: number, key: string): string {
-  if (key.includes('Ratio') || key.includes('ratio') || key === 'changeConcentrationGini' || key === 'fileTypeDiversity') {
+  if (!Number.isFinite(value)) return 'N/A';
+  if (key.includes('Ratio') || key.includes('ratio') || key === 'changeConcentrationGini') {
     return `${(value * 100).toFixed(1)}%`;
   }
   if (key === 'sessionDuration') {
@@ -177,6 +184,12 @@ function formatValue(value: number, key: string): string {
   }
   if (key === 'commitFrequency') {
     return `${value.toFixed(1)}/h`;
+  }
+  if (key === 'fileTypeDiversity') {
+    return value.toFixed(2);
+  }
+  if (key === 'burstPattern') {
+    return `${(value * 100).toFixed(1)}%`;
   }
   return value.toFixed(1);
 }
